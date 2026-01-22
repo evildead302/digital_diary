@@ -8,7 +8,7 @@
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <!-- Login/Register Screen -->
+    <!-- AUTH SCREEN (SHOWN FIRST) -->
     <div id="authScreen" style="display: block;">
         <div class="auth-container">
             <h1>💰 Accounts Diary</h1>
@@ -29,7 +29,7 @@
         </div>
     </div>
 
-    <!-- Main App (Hidden until login) -->
+    <!-- APP SCREEN (HIDDEN UNTIL LOGIN) -->
     <div id="appScreen" style="display: none;">
         <nav>
             <button onclick="showPage('home')">🏠 Home</button>
@@ -41,25 +41,65 @@
             <button onclick="logout()" class="danger-btn">🚪 Logout</button>
         </nav>
 
+        <!-- HOME PAGE -->
         <section id="home" class="page active">
             <h2>Welcome, <span id="userName">User</span>!</h2>
-            <div id="totalBalance">Loading...</div>
-            <button onclick="syncWithCloud()" class="primary-btn">🔄 Sync with Cloud</button>
-            <div id="recentEntries">Loading recent entries...</div>
+            <h1 id="totalBalance">PKR 0.00</h1>
+            
+            <div class="status-box">
+                <p id="syncStatus">🔄 Sync Status: Checking...</p>
+                <p id="entryCount">📝 Total Entries: 0</p>
+            </div>
+            
+            <div class="quick-actions">
+                <button onclick="showPage('entry')" class="primary-btn">➕ Add New Entry</button>
+                <button onclick="showPage('ledger')" class="secondary-btn">📊 View Ledger</button>
+                <button onclick="syncWithCloud()" class="success-btn">🔄 Sync with Cloud</button>
+            </div>
+            
+            <div class="recent-entries">
+                <h3>📋 Recent Transactions</h3>
+                <div id="recentEntries">
+                    <div class="no-entries">No recent transactions</div>
+                </div>
+            </div>
         </section>
 
-        <!-- Other pages (entry, balance, ledger, search, settings) remain the same -->
-        <!-- Copy from your original index.html but remove Google Drive sections -->
+        <!-- ENTRY PAGE (copy from your index.html(5).txt) -->
+        <section id="entry" class="page">
+            <!-- PASTE THE ENTRY PAGE CONTENT FROM index.html(5).txt HERE -->
+        </section>
+
+        <!-- BALANCE PAGE (copy from your index.html(5).txt) -->
+        <section id="balance" class="page">
+            <!-- PASTE THE BALANCE PAGE CONTENT FROM index.html(5).txt HERE -->
+        </section>
+
+        <!-- LEDGER PAGE (copy from your index.html(5).txt) -->
+        <section id="ledger" class="page">
+            <!-- PASTE THE LEDGER PAGE CONTENT FROM index.html(5).txt HERE -->
+        </section>
+
+        <!-- SEARCH PAGE (copy from your index.html(5).txt) -->
+        <section id="search" class="page">
+            <!-- PASTE THE SEARCH PAGE CONTENT FROM index.html(5).txt HERE -->
+        </section>
+
+        <!-- SETTINGS PAGE (copy from your index.html(5).txt) -->
+        <section id="settings" class="page">
+            <!-- PASTE THE SETTINGS PAGE CONTENT FROM index.html(5).txt HERE -->
+        </section>
     </div>
 
     <!-- Load scripts -->
     <script src="db.js"></script>
     <script src="app.js"></script>
-    <script src="auth.js"></script>
     
     <script>
         // Check if already logged in
-        checkAuth();
+        window.onload = function() {
+            checkAuth();
+        };
     </script>
 </body>
 </html>
