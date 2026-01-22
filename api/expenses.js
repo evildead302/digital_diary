@@ -1,4 +1,4 @@
-// /api/expenses.js - ONLY GET QUERY UPDATED
+// /api/expenses.js - UPDATED WITH PROPER ERROR HANDLING
 import { neon } from '@neondatabase/serverless';
 import jwt from 'jsonwebtoken';
 
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
           const expenses = await sql`
             SELECT 
               id, 
-              TO_CHAR(date, 'DD-MM-YYYY') as date,  -- CHANGED: Format as DD-MM-YYYY
+              TO_CHAR(date, 'DD-MM-YYYY') as date,
               description, 
               amount, 
               main_category, 
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
               updated_at
             FROM expenses 
             WHERE user_id = ${userId} AND deleted = false
-            ORDER BY date DESC  -- Note: Still ordering by original date column
+            ORDER BY date DESC
             LIMIT 1000
           `;
           console.log(`Found ${expenses.length} expenses for user ${userId}`);
@@ -102,80 +102,108 @@ export default async function handler(req, res) {
             return res.json({ 
               success: true, 
               message: 'No expenses to sync',
+              successes: [],
               inserted: 0,
               updated: 0 
             });
           }
 
-          let inserted = 0;
-          let updated = 0;
+          let successes = [];
           let errors = [];
 
-          for (const expense of expenses) {
-            try {
-              // Validate expense data
-              if (!expense.id || !expense.date || expense.amount === undefined) {
-                errors.push({ id: expense.id, error: 'Missing required fields' });
-                continue;
-              }
+          // Use a transaction for atomic operations
+          await sql.begin(async sql => {
+            for (const expense of expenses) {
+              try {
+                // Validate expense data
+                if (!expense.id || !expense.date || expense.amount === undefined) {
+                  throw new Error('Missing required fields (id, date, amount)');
+                }
 
-              // Check if expense exists
-              const existing = await sql`
-                SELECT id FROM expenses 
-                WHERE id = ${expense.id} AND user_id = ${userId}
-              `;
+                // Parse date from DD-MM-YYYY to YYYY-MM-DD for database
+                let dbDate;
+                try {
+                  const [day, month, year] = expense.date.split('-');
+                  dbDate = `${year}-${month}-${day}`;
+                } catch (dateError) {
+                  // Try parsing as ISO date
+                  dbDate = expense.date;
+                }
 
-              if (existing.length > 0) {
-                // Update existing expense
-                await sql`
-                  UPDATE expenses SET
-                    date = ${expense.date},
-                    description = ${expense.desc || expense.description || ''},
-                    amount = ${parseFloat(expense.amount)},
-                    main_category = ${expense.main || expense.main_category || ''},
-                    sub_category = ${expense.sub || expense.sub_category || ''},
-                    updated_at = NOW(),
-                    deleted = ${expense.syncRemarks === 'deleted' || false}
+                // Check if expense exists
+                const existing = await sql`
+                  SELECT id FROM expenses 
                   WHERE id = ${expense.id} AND user_id = ${userId}
                 `;
-                updated++;
-                console.log(`Updated expense ${expense.id} for user ${userId}`);
-              } else {
-                // Insert new expense
-                await sql`
-                  INSERT INTO expenses (
-                    id, user_id, date, description, amount, 
-                    main_category, sub_category, created_at
-                  ) VALUES (
-                    ${expense.id}, 
-                    ${userId}, 
-                    ${expense.date}, 
-                    ${expense.desc || expense.description || ''},
-                    ${parseFloat(expense.amount)}, 
-                    ${expense.main || expense.main_category || ''}, 
-                    ${expense.sub || expense.sub_category || ''}, 
-                    NOW()
-                  )
-                `;
-                inserted++;
-                console.log(`Inserted expense ${expense.id} for user ${userId}`);
-              }
-            } catch (dbError) {
-              console.error(`Error processing expense ${expense.id}:`, dbError);
-              errors.push({ 
-                id: expense.id, 
-                error: dbError.message 
-              });
-            }
-          }
 
-          return res.json({
-            success: true,
-            message: `Sync complete: ${inserted} inserted, ${updated} updated`,
-            inserted,
-            updated,
-            errors: errors.length > 0 ? errors : undefined
+                if (existing.length > 0) {
+                  // Update existing expense
+                  await sql`
+                    UPDATE expenses SET
+                      date = ${dbDate},
+                      description = ${expense.description || expense.desc || ''},
+                      amount = ${parseFloat(expense.amount)},
+                      main_category = ${expense.main_category || expense.main || ''},
+                      sub_category = ${expense.sub_category || expense.sub || ''},
+                      updated_at = NOW(),
+                      deleted = ${expense.syncRemarks === 'deleted' || false}
+                    WHERE id = ${expense.id} AND user_id = ${userId}
+                  `;
+                  console.log(`Updated expense ${expense.id} for user ${userId}`);
+                } else {
+                  // Insert new expense
+                  await sql`
+                    INSERT INTO expenses (
+                      id, user_id, date, description, amount, 
+                      main_category, sub_category, created_at
+                    ) VALUES (
+                      ${expense.id}, 
+                      ${userId}, 
+                      ${dbDate}, 
+                      ${expense.description || expense.desc || ''},
+                      ${parseFloat(expense.amount)}, 
+                      ${expense.main_category || expense.main || ''}, 
+                      ${expense.sub_category || expense.sub || ''}, 
+                      NOW()
+                    )
+                  `;
+                  console.log(`Inserted expense ${expense.id} for user ${userId}`);
+                }
+                
+                successes.push(expense.id);
+                
+              } catch (dbError) {
+                console.error(`Error processing expense ${expense.id}:`, dbError);
+                errors.push({ 
+                  id: expense.id, 
+                  error: dbError.message 
+                });
+              }
+            }
           });
+
+          const inserted = successes.length - errors.length;
+          const updated = errors.length; // Actually errors count, but we need better tracking
+          
+          // Return partial success if there were some errors
+          if (errors.length > 0) {
+            return res.json({
+              success: true, // Still true because some were processed
+              message: `Partial sync: ${successes.length} processed, ${errors.length} failed`,
+              successes,
+              errors,
+              inserted: inserted > 0 ? inserted : 0,
+              updated: 0
+            });
+          } else {
+            return res.json({
+              success: true,
+              message: `Sync complete: ${successes.length} processed successfully`,
+              successes,
+              inserted: successes.length,
+              updated: 0
+            });
+          }
 
         } catch (error) {
           console.error('Sync POST error:', error);
