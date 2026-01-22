@@ -1,4 +1,4 @@
-// /api/expenses.js - COMPLETE FIXED VERSION
+// /api/expenses.js - ONLY GET QUERY UPDATED
 import { neon } from '@neondatabase/serverless';
 import jwt from 'jsonwebtoken';
 
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
           const expenses = await sql`
             SELECT 
               id, 
-              date, 
+              TO_CHAR(date, 'DD-MM-YYYY') as date,  -- CHANGED: Format as DD-MM-YYYY
               description, 
               amount, 
               main_category, 
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
               updated_at
             FROM expenses 
             WHERE user_id = ${userId} AND deleted = false
-            ORDER BY date DESC
+            ORDER BY date DESC  -- Note: Still ordering by original date column
             LIMIT 1000
           `;
           console.log(`Found ${expenses.length} expenses for user ${userId}`);
