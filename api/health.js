@@ -1,6 +1,14 @@
 import { neon } from '@neondatabase/serverless';
 
-const sql = neon(process.env.DATABASE_URL);
+// Clean up the DATABASE_URL if it has 'psql' prefix and quotes
+let connectionString = process.env.DATABASE_URL;
+
+// Remove 'psql' prefix and quotes if present
+if (connectionString.startsWith('psql ')) {
+  connectionString = connectionString.replace(/^psql\s+['"]?|['"]$/g, '');
+}
+
+const sql = neon(connectionString);
 
 export default async function handler(req, res) {
   try {
