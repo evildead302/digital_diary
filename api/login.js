@@ -60,12 +60,16 @@ export default async function handler(req, res) {
       { expiresIn: '7d' }
     );
 
-    console.log('Login successful for:', email);
+    console.log('Login successful for:', email, 'User ID:', user.id);
 
     return res.status(200).json({
       success: true,
       message: 'Login successful',
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name 
+      },
       token
     });
 
