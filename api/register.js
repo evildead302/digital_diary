@@ -1,19 +1,3 @@
-import { neon } from '@neondatabase/serverless';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-
-const sql = neon(process.env.DATABASE_URL);
-const JWT_SECRET = process.env.JWT_SECRET;
-
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, message: 'Method not allowed' });
-  }
-
-  try {
-    const { email, password, name } = req.body;
-
-    if (!email || !password) {
 // /api/register.js
 import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcryptjs';
@@ -132,7 +116,5 @@ export default async function handler(req, res) {
       message: 'Internal server error',
       error: error.message 
     });
-  }
-}success: false, message: 'Internal server error' });
   }
 }
