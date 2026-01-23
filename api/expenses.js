@@ -1,4 +1,4 @@
-// /api/expenses.js - FIXED VERSION WITHOUT TRANSACTION ERROR
+// /api/expenses.js - UPDATED with permanent deletion
 import { neon } from '@neondatabase/serverless';
 import jwt from 'jsonwebtoken';
 
@@ -61,11 +61,10 @@ export default async function handler(req, res) {
               amount, 
               main_category, 
               sub_category,
-              deleted,
               created_at,
               updated_at
             FROM expenses 
-            WHERE user_id = ${userId} AND deleted = false
+            WHERE user_id = ${userId}
             ORDER BY date DESC
             LIMIT 1000
           `;
@@ -113,7 +112,7 @@ export default async function handler(req, res) {
           let insertedCount = 0;
           let updatedCount = 0;
 
-          // Process entries sequentially without transaction
+          // Process entries sequentially
           for (const expense of expenses) {
             try {
               // Validate expense data
@@ -146,8 +145,7 @@ export default async function handler(req, res) {
                     amount = ${parseFloat(expense.amount)},
                     main_category = ${expense.main_category || expense.main || ''},
                     sub_category = ${expense.sub_category || expense.sub || ''},
-                    updated_at = NOW(),
-                    deleted = ${expense.syncRemarks === 'deleted' || false}
+                    updated_at = NOW()
                   WHERE id = ${expense.id} AND user_id = ${userId}
                 `;
                 updatedCount++;
@@ -223,15 +221,15 @@ export default async function handler(req, res) {
             });
           }
 
+          // PERMANENT DELETE - not just mark as deleted
           await sql`
-            UPDATE expenses 
-            SET deleted = true, updated_at = NOW() 
+            DELETE FROM expenses 
             WHERE id = ${id} AND user_id = ${userId}
           `;
 
           return res.json({ 
             success: true, 
-            message: 'Expense marked as deleted' 
+            message: 'Expense permanently deleted' 
           });
         } catch (error) {
           console.error('Delete error:', error);
