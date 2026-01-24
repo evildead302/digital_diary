@@ -1,24 +1,23 @@
 // /api/register.js
-import { neon } from '@neondatabase/serverless';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import Base61 from './base61.js';
+const { neon } = require('@neondatabase/serverless');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const Base61 = require('./base61.js');
 
 const sql = neon(process.env.DATABASE_URL);
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-// Function to generate unique user ID
 async function generateUniqueUserId() {
   let isUnique = false;
   let userId = '';
-  let randomLength = 3;
+  let attempts = 0;
   
-  while (!isUnique) {
+  while (!isUnique && attempts < 10) {
     // Generate timestamp in base61
     const timestampBase61 = Base61.generateBase61Timestamp();
     
     // Add random base61 characters
-    const randomPart = Base61.random(randomLength);
+    const randomPart = Base61.random(3);
     
     userId = timestampBase61 + randomPart;
     
@@ -31,9 +30,8 @@ async function generateUniqueUserId() {
       if (existing.length === 0) {
         isUnique = true;
       } else {
-        // Not unique, add one more random character and try again
-        randomLength++;
-        console.log(`User ID ${userId} exists, trying with ${randomLength} random chars`);
+        attempts++;
+        console.log(`User ID ${userId} exists, trying again (attempt ${attempts})`);
       }
     } catch (error) {
       console.error('Error checking user ID uniqueness:', error);
@@ -41,10 +39,15 @@ async function generateUniqueUserId() {
     }
   }
   
+  if (!isUnique) {
+    // Fallback: timestamp + random string
+    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+  
   return userId;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -87,7 +90,7 @@ export default async function handler(req, res) {
     // Create user with new ID format
     const [newUser] = await sql`
       INSERT INTO users (id, email, password_hash, name, created_at)
-      VALUES (${userId}, ${email}, ${hashedPassword}, ${name || ''}, NOW())
+      VALUES (${userId}, ${email}, ${hashedPassword}, ${name || email.split("@")[0] || ''}, NOW())
       RETURNING id, email, name
     `;
 
