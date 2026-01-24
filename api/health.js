@@ -1,23 +1,29 @@
-import { neon } from '@neondatabase/serverless';
+// /api/health.js
+const { neon } = require('@neondatabase/serverless');
 
-// Clean up the DATABASE_URL if it has 'psql' prefix and quotes
-let connectionString = process.env.DATABASE_URL;
+module.exports = async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-// Remove 'psql' prefix and quotes if present
-if (connectionString.startsWith('psql ')) {
-  connectionString = connectionString.replace(/^psql\s+['"]?|['"]$/g, '');
-}
+  // Handle OPTIONS request for CORS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
-const sql = neon(connectionString);
+  if (req.method !== 'GET') {
+    return res.status(405).json({ success: false, message: 'Method not allowed' });
+  }
 
-export default async function handler(req, res) {
   try {
     // Test database connection
-    await sql`SELECT 1`;
+    await neon(process.env.DATABASE_URL)`SELECT 1`;
     
     return res.json({
       success: true,
-      message: 'API is healthy',
+      message: 'API and database are healthy',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
