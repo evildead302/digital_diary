@@ -1,10 +1,42 @@
-// /api/login.js - FIXED with proper ES module syntax and body parsing
+// /api/login.js - VERCEL COMPATIBLE VERSION
 import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const sql = neon(process.env.DATABASE_URL);
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+// Helper function to parse request body consistently
+async function parseRequestBody(req) {
+  return new Promise((resolve, reject) => {
+    if (req.method !== 'POST') {
+      resolve({});
+      return;
+    }
+    
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    
+    req.on('end', () => {
+      try {
+        if (body) {
+          resolve(JSON.parse(body));
+        } else {
+          resolve({});
+        }
+      } catch (error) {
+        console.error('JSON parse error:', error);
+        reject(new Error('Invalid JSON'));
+      }
+    });
+    
+    req.on('error', error => {
+      reject(error);
+    });
+  });
+}
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -23,39 +55,54 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parse the request body
+    // Parse request body
     let body;
     try {
-      if (typeof req.body === 'string') {
-        body = JSON.parse(req.body);
-      } else if (Buffer.isBuffer(req.body)) {
-        body = JSON.parse(req.body.toString());
-      } else {
-        body = req.body;
-      }
+      body = await parseRequestBody(req);
     } catch (parseError) {
-      console.error('Failed to parse request body:', parseError);
-      return res.status(400).json({ success: false, message: 'Invalid JSON in request body' });
+      console.error('Body parsing error:', parseError);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid request body format' 
+      });
     }
+
+    console.log('Login request body:', body);
 
     const { email, password } = body;
 
-    console.log('Login attempt for:', email);
-
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password required' });
+      console.log('Missing email or password');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email and password required' 
+      });
     }
 
+    console.log('Login attempt for:', email);
+
     // Get user from database
-    const users = await sql`
-      SELECT id, email, password_hash, name 
-      FROM users 
-      WHERE email = ${email}
-    `;
+    let users;
+    try {
+      users = await sql`
+        SELECT id, email, password_hash, name 
+        FROM users 
+        WHERE email = ${email}
+      `;
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Database error' 
+      });
+    }
 
     if (!users || users.length === 0) {
       console.log('User not found:', email);
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid credentials' 
+      });
     }
 
     const user = users[0];
@@ -65,7 +112,10 @@ export default async function handler(req, res) {
 
     if (!isPasswordValid) {
       console.log('Invalid password for:', email);
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid credentials' 
+      });
     }
 
     // Generate JWT
