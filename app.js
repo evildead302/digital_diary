@@ -233,7 +233,7 @@ async function login() {
     
     try {
         // Use auth.js function
-        const result = await window.authAPI.login(email, password);
+        const result = await authAPI.login(email, password);
         
         console.log("📊 Login response data:", result);
         
