@@ -161,7 +161,142 @@ async function checkAuth() {
             console.error("❌ Error parsing user data:", e);
         }
     }
+    // Login function that uses auth.js
+async function login() {
+    const email = document.getElementById("authEmail").value;
+    const password = document.getElementById("authPassword").value;
+    const errorEl = document.getElementById("authError");
+    const statusEl = document.getElementById("authStatus");
     
+    if (!email || !password) {
+        if (errorEl) errorEl.textContent = "Please enter both email and password";
+        return;
+    }
+    
+    if (errorEl) errorEl.textContent = "";
+    if (statusEl) statusEl.textContent = "Logging in...";
+    
+    console.log("🔐 Attempting login for:", email);
+    
+    try {
+        // Use auth.js function directly with parameters
+        const result = await window.authAPI.login(email, password);
+        
+        console.log("📊 Login response data:", result);
+        
+        if (result.success && result.token && result.user) {
+            // Update global variables
+            authToken = result.token;
+            currentUser = result.user;
+            currentUserId = result.user.id;
+            
+            console.log("✅ Login successful, setting localStorage:", {
+                userId: currentUserId,
+                userEmail: currentUser.email
+            });
+            
+            // Save to localStorage
+            localStorage.setItem("auth_token", result.token);
+            localStorage.setItem("auth_user", JSON.stringify(result.user));
+            
+            if (statusEl) statusEl.textContent = "✅ Login successful! Loading app...";
+            
+            // Clear any previous user's data from localStorage
+            clearOtherUserData();
+            
+            // Initialize database for this user
+            const dbInitialized = await initUserDatabase();
+            if (!dbInitialized) {
+                if (errorEl) errorEl.textContent = "Failed to initialize database. Please refresh and try again.";
+                return;
+            }
+            
+            // Load data from Neon after successful login
+            await loadDataFromCloudOnLogin();
+            
+            // Re-check auth (which will show the app)
+            setTimeout(() => {
+                checkAuth();
+            }, 500);
+            
+        } else {
+            if (errorEl) errorEl.textContent = result.message || "Login failed. Please check your credentials.";
+            if (statusEl) statusEl.textContent = "";
+        }
+    } catch (error) {
+        console.error("❌ Login error:", error);
+        if (errorEl) errorEl.textContent = `Login failed: ${error.message}`;
+        if (statusEl) statusEl.textContent = "";
+    }
+}
+
+// Register function that uses auth.js
+async function register() {
+    const email = document.getElementById("authEmail").value;
+    const password = document.getElementById("authPassword").value;
+    const errorEl = document.getElementById("authError");
+    const statusEl = document.getElementById("authStatus");
+    
+    if (!email || !password) {
+        if (errorEl) errorEl.textContent = "Please enter both email and password";
+        return;
+    }
+    
+    if (password.length < 6) {
+        if (errorEl) errorEl.textContent = "Password must be at least 6 characters";
+        return;
+    }
+    
+    if (errorEl) errorEl.textContent = "";
+    if (statusEl) statusEl.textContent = "Registering...";
+    
+    console.log("📝 Attempting registration for:", email);
+    
+    try {
+        // Use auth.js function directly with parameters
+        const result = await window.authAPI.register(email, password, email.split("@")[0]);
+        
+        console.log("📊 Registration response:", result);
+        
+        if (result.success && result.token && result.user) {
+            // Update global variables
+            authToken = result.token;
+            currentUser = result.user;
+            currentUserId = result.user.id;
+            
+            console.log("✅ Registration successful, setting localStorage");
+            
+            // Save to localStorage
+            localStorage.setItem("auth_token", result.token);
+            localStorage.setItem("auth_user", JSON.stringify(result.user));
+            
+            if (statusEl) statusEl.textContent = "✅ Registration successful! Loading app...";
+            
+            // Clear any previous user's data
+            clearOtherUserData();
+            
+            // Initialize database for this new user
+            const dbInitialized = await initUserDatabase();
+            if (!dbInitialized) {
+                if (errorEl) errorEl.textContent = "Failed to initialize database. Please refresh and try again.";
+                return;
+            }
+            
+            // Re-check auth (which will show the app)
+            setTimeout(() => {
+                checkAuth();
+            }, 500);
+            
+        } else {
+            if (errorEl) errorEl.textContent = result.message || "Registration failed. User may already exist.";
+            if (statusEl) statusEl.textContent = "";
+        }
+    } catch (error) {
+        console.error("❌ Registration error:", error);
+        if (errorEl) errorEl.textContent = `Registration failed: ${error.message}`;
+        if (statusEl) statusEl.textContent = "";
+    }
+        }
     console.log({ 
         authToken: !!authToken, 
         currentUser: !!currentUser,
@@ -216,51 +351,7 @@ function showAuthScreen() {
 
 // Login function that uses auth.js
 async function login() {
-    const email = document.getElementById("authEmail").value;
-    const password = document.getElementById("authPassword").value;
-    const errorEl = document.getElementById("authError");
-    const statusEl = document.getElementById("authStatus");
-    
-    if (!email || !password) {
-        if (errorEl) errorEl.textContent = "Please enter both email and password";
-        return;
-    }
-    
-    if (errorEl) errorEl.textContent = "";
-    if (statusEl) statusEl.textContent = "Logging in...";
-    
-    console.log("🔐 Attempting login for:", email);
-    
-    try {
-        // Use auth.js function
-        const result = await authAPI.login(email, password);
-        
-        console.log("📊 Login response data:", result);
-        
-        if (result.success && result.token && result.user) {
-            // Update global variables
-            authToken = result.token;
-            currentUser = result.user;
-            currentUserId = result.user.id;
-            
-            console.log("✅ Login successful, setting localStorage:", {
-                userId: currentUserId,
-                userEmail: currentUser.email
-            });
-            
-            // Save to localStorage
-            localStorage.setItem("auth_token", result.token);
-            localStorage.setItem("auth_user", JSON.stringify(result.user));
-            
-            if (statusEl) statusEl.textContent = "✅ Login successful! Loading app...";
-            
-            // Clear any previous user's data from localStorage
-            clearOtherUserData();
-            
-            // Initialize database for this user
-            const dbInitialized = await initUserDatabase();
-            if (!dbInitialized) {
-                if (errorEl) errorEl.textContent = "Failed to initialize database. Please refresh and try again.";
+    conto initialize database. Please refresh and try again.";
                 return;
             }
             
