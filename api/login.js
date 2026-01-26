@@ -1,17 +1,17 @@
-// /api/login.js
-const { neon } = require('@neondatabase/serverless');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+// /api/login.js - FIXED with proper ES module syntax and body parsing
+import { neon } from '@neondatabase/serverless';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const sql = neon(process.env.DATABASE_URL);
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Enable CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
   // Handle OPTIONS request for CORS
   if (req.method === 'OPTIONS') {
@@ -23,7 +23,22 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { email, password } = req.body;
+    // Parse the request body
+    let body;
+    try {
+      if (typeof req.body === 'string') {
+        body = JSON.parse(req.body);
+      } else if (Buffer.isBuffer(req.body)) {
+        body = JSON.parse(req.body.toString());
+      } else {
+        body = req.body;
+      }
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return res.status(400).json({ success: false, message: 'Invalid JSON in request body' });
+    }
+
+    const { email, password } = body;
 
     console.log('Login attempt for:', email);
 
