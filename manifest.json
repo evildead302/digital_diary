@@ -9,67 +9,77 @@
   "orientation": "portrait",
   "scope": "./",
   "lang": "en",
+  
   "icons": [
     {
-      "src": "./icon-72.png",
+      "src": "https://img.icons8.com/color/72/000000/book-keeping.png",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./icon-96.png",
+      "src": "https://img.icons8.com/color/96/000000/book-keeping.png",
       "sizes": "96x96",
       "type": "image/png"
     },
     {
-      "src": "./icon-128.png",
+      "src": "https://img.icons8.com/color/128/000000/book-keeping.png",
       "sizes": "128x128",
       "type": "image/png"
     },
     {
-      "src": "./icon-144.png",
+      "src": "https://img.icons8.com/color/144/000000/book-keeping.png",
       "sizes": "144x144",
       "type": "image/png"
     },
     {
-      "src": "./icon-152.png",
+      "src": "https://img.icons8.com/color/152/000000/book-keeping.png",
       "sizes": "152x152",
       "type": "image/png"
     },
     {
-      "src": "./icon-192.png",
+      "src": "https://img.icons8.com/color/192/000000/book-keeping.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./icon-384.png",
+      "src": "https://img.icons8.com/color/384/000000/book-keeping.png",
       "sizes": "384x384",
       "type": "image/png"
     },
     {
-      "src": "./icon-512.png",
+      "src": "https://img.icons8.com/color/512/000000/book-keeping.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
+  
   "categories": ["finance", "productivity", "utilities"],
+  
   "shortcuts": [
     {
       "name": "Add Entry",
       "short_name": "Add",
       "description": "Add a new transaction",
       "url": "./?page=entry",
-      "icons": [{ "src": "./icon-96.png", "sizes": "96x96" }]
+      "icons": [{ 
+        "src": "https://img.icons8.com/color/96/000000/book-keeping.png", 
+        "sizes": "96x96" 
+      }]
     },
     {
       "name": "View Balance",
       "short_name": "Balance",
       "description": "Check your balance",
       "url": "./?page=balance",
-      "icons": [{ "src": "./icon-96.png", "sizes": "96x96" }]
+      "icons": [{ 
+        "src": "https://img.icons8.com/color/96/000000/book-keeping.png", 
+        "sizes": "96x96" 
+      }]
     }
   ],
+  
   "related_applications": [],
   "prefer_related_applications": false
 }
