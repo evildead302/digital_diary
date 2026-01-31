@@ -6,7 +6,6 @@
   "display": "standalone",
   "theme_color": "#4a6fa5",
   "background_color": "#ffffff",
-  "orientation": "portrait",
   "scope": "./",
   "lang": "en",
   
@@ -14,28 +13,7 @@
     {
       "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📒</text></svg>",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     }
-  ],
-  
-  "categories": ["finance", "productivity", "utilities"],
-  
-  "shortcuts": [
-    {
-      "name": "Add Entry",
-      "short_name": "Add",
-      "description": "Add a new transaction",
-      "url": "./?page=entry"
-    },
-    {
-      "name": "View Balance",
-      "short_name": "Balance",
-      "description": "Check your balance",
-      "url": "./?page=balance"
-    }
-  ],
-  
-  "related_applications": [],
-  "prefer_related_applications": false
+  ]
 }
