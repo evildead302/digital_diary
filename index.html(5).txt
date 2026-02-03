@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accounts Diary</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Allow Google Scripts on GitHub Pages -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self' https://apis.google.com https://accounts.google.com;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: https:;
+        connect-src 'self' https://*.googleapis.com;
+    ">
+</head>
+<body>
+    <nav>
+        <button onclick="showPage('home')">🏠 Home</button>
+        <button onclick="showPage('entry')">➕ Add Entry</button>
+        <button onclick="showPage('balance')">💰 Balance</button>
+        <button onclick="showPage('ledger')">📒 Ledger</button>
+        <button onclick="showPage('search')">🔍 Search</button>
+        <button onclick="showPage('backup')">💾 Backup</button>
+        <button onclick="showPage('settings')">⚙️ Settings</button>
+    </nav>
+
+    <!-- HOME PAGE -->
+    <section id="home" class="page active">
+        <h1>📊 Digital Diary</h1>
+        <h3>Total Balance</h3>
+        <h1 id="totalBalance">PKR 0.00</h1>
+        
+        <div class="status-box">
+            <p id="driveGlobalStatus">🌐 Google Drive: Not Connected</p>
+            <p id="entryCount">📝 Total Entries: 0</p>
+        </div>
+        
+        <div class="quick-actions">
+            <button onclick="showPage('entry')" class="primary-btn">➕ Add New Entry</button>
+            <button onclick="showPage('ledger')" class="secondary-btn">📊 View Ledger</button>
+            <button onclick="quickSearch()" class="secondary-btn">🔍 Quick Search</button>
+        </div>
+        
+        <div class="recent-entries">
+            <h3>📋 Recent Transactions (Last 10)</h3>
+            <div id="recentEntries">
+                <div class="no-entries">No recent transactions</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SETTINGS PAGE -->
+    <section id="settings" class="page">
+        <h2>⚙️ Settings</h2>
+        
+        <!-- GitHub Pages Warning -->
+        <div id="githubWarning" style="display: none; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+            <h4 style="color: #856404; margin-top: 0;">⚠️ Note for GitHub Pages Users</h4>
+            <p style="margin: 10px 0; color: #856404;">
+                <strong>You can save credentials, but Google Drive connection requires:</strong>
+            </p>
+            <ul style="color: #856404; margin-left: 20px;">
+                <li>Running the app locally (open index.html from your computer)</li>
+                <li>Or download as CSV and upload manually to Google Drive</li>
+            </ul>
+        </div>
+        
+        <div class="settings-section">
+            <h3>1️⃣ Category Management</h3>
+            <div class="input-group">
+                <input type="text" id="mainHeadInput" placeholder="Enter Main Category (e.g., Food, Salary)">
+                <button onclick="addMainHead()" class="primary-btn">➕ Add Main Category</button>
+            </div>
+            
+            <div class="input-group">
+                <select id="mainForSub"></select>
+                <input type="text" id="subHeadInput" placeholder="Enter Sub Category (e.g., Groceries, Dining)">
+                <button onclick="addSubHead()" class="primary-btn">➕ Add Sub Category</button>
+            </div>
+            
+            <div class="categories-list">
+                <h4>📁 Current Categories</h4>
+                <ul id="headList"></ul>
+            </div>
+        </div>
+        
+        <div class="settings-section neon-config">
+            <h3>2️⃣ Google Drive Configuration</h3>
+            
+            <!-- Connection Status -->
+            <div class="config-group">
+                <label>Connection Status:</label>
+                <div id="driveStatus" class="status-indicator">
+                    ❌ Not configured
+                </div>
+            </div>
+            
+            <!-- Configuration Form -->
+            <div class="config-group">
+                <label>Google Cloud Credentials:</label>
+                <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin: 10px 0;">
+                    <p><strong>Get these from Google Cloud Console:</strong></p>
+                    
+                    <div class="input-group" style="margin-bottom: 10px;">
+                        <input type="text" id="gdriveClientId" 
+                               placeholder="OAuth Client ID (ends with .apps.googleusercontent.com)"
+                               class="credential-input">
+                    </div>
+                    
+                    <div class="input-group" style="margin-bottom: 10px;">
+                        <input type="text" id="gdriveApiKey" 
+                               placeholder="API Key (starts with AIza)"
+                               class="credential-input">
+                    </div>
+                    
+                    <div class="input-group" style="margin-bottom: 10px;">
+                        <input type="text" id="gdriveFolderId" 
+                               placeholder="Google Drive Folder ID (from shared folder URL)"
+                               class="credential-input">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button onclick="saveDriveConfig()" class="primary-btn">💾 Save Credentials</button>
+                        <button onclick="clearDriveConfig()" class="secondary-btn">🗑️ Clear</button>
+                    </div>
+                    
+                    <div class="credential-instructions">
+                        <p><strong>📋 How to get credentials:</strong></p>
+                        <ol>
+                            <li>Go to <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a></li>
+                            <li>Create project → Enable Drive API</li>
+                            <li>Create OAuth Client ID (Web application)</li>
+                            <li>Create API Key (restrict to your domain)</li>
+                            <li>Create shared folder in Google Drive</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Connection Buttons -->
+            <div class="config-group">
+                <label>Connect to Google Drive:</label>
+                <div class="button-group">
+                    <button id="driveConnectBtn" onclick="connectDrive()" class="primary-btn" disabled>
+                        🔗 Connect to Google Drive
+                    </button>
+                    <button id="driveDisconnectBtn" onclick="disconnectDrive()" class="danger-btn-large" style="display: none;">
+                        🚫 Disconnect
+                    </button>
+                    <button onclick="testDriveConnection()" class="secondary-btn">🧪 Test Connection</button>
+                </div>
+            </div>
+            
+            <!-- Instructions -->
+            <div class="sync-status">
+                <h4>📖 Setup Instructions</h4>
+                <ol style="margin-left: 20px; color: #666;">
+                    <li>Get credentials from Google Cloud Console</li>
+                    <li>Enter them above and click "Save Credentials"</li>
+                    <li>Click "Connect to Google Drive"</li>
+                    <li>Login with Google when prompted</li>
+                    <li>Grant permission to access Drive</li>
+                    <li>Now you can upload/download from Backup page</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <!-- ENTRY PAGE -->
+    <section id="entry" class="page">
+        <h2>➕ Add / Edit Entries</h2>
+        
+        <div class="entry-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Main Category:</label>
+                    <select id="entryMain" onchange="updateEntrySubheads()">
+                        <option value="">-- Select Main Category --</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Sub Category:</label>
+                    <select id="entrySub">
+                        <option value="">-- Select Sub Category --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date:</label>
+                    <input type="date" id="date" value="">
+                </div>
+                
+                <div class="form-group">
+                    <label>Description:</label>
+                    <input type="text" id="desc" placeholder="Enter description">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Amount:</label>
+                    <input type="number" id="amount" placeholder="Enter amount" step="0.01">
+                    <small>Use positive for income, negative for expense</small>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button onclick="addTemp()" class="primary-btn">📝 Add to Temporary List</button>
+                <button onclick="saveAll()" class="success-btn">💾 Save All Entries</button>
+                <button onclick="clearTemp()" class="secondary-btn">🗑️ Clear Temporary</button>
+                <button onclick="cancelEdit()" id="cancelEditBtn" class="secondary-btn" style="display: none;">❌ Cancel Edit</button>
+            </div>
+        </div>
+        
+        <div class="lists-container">
+            <div class="list-section">
+                <h3>📋 Temporary Entries (Pending Save)</h3>
+                <div id="tempList">
+                    <div class="no-entries">No temporary entries</div>
+                </div>
+            </div>
+            
+            <div class="list-section">
+                <h3>💾 Saved Entries (Recent 20)</h3>
+                <div id="savedEntryList">
+                    <div class="no-entries">No saved entries</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BALANCE PAGE -->
+    <section id="balance" class="page">
+        <h2>💰 Balance Details</h2>
+        
+        <div class="summary-cards">
+            <div class="card income-card">
+                <h4>Total Income</h4>
+                <p id="totalIncome">PKR 0.00</p>
+            </div>
+            <div class="card expense-card">
+                <h4>Total Expense</h4>
+                <p id="totalExpense">PKR 0.00</p>
+            </div>
+            <div class="card balance-card">
+                <h4>Net Balance</h4>
+                <p id="netBalance">PKR 0.00</p>
+            </div>
+        </div>
+        
+        <h3>📊 Category-wise Balance</h3>
+        <ul id="balanceList" class="category-list"></ul>
+    </section>
+
+    <!-- LEDGER PAGE -->
+    <section id="ledger" class="page">
+        <h2>📒 Ledger View</h2>
+        
+        <div class="filter-controls">
+            <div class="filter-group">
+                <label>Main Category:</label>
+                <select id="ledgerMain" onchange="updateLedgerSubheads()">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Sub Category:</label>
+                <select id="ledgerSub">
+                    <option value="">All Sub-categories</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Date Range:</label>
+                <input type="date" id="fromDate">
+                <span>to</span>
+                <input type="date" id="toDate">
+            </div>
+            
+            <div class="filter-group">
+                <label>Transaction Type:</label>
+                <select id="typeFilter">
+                    <option value="all">All Types</option>
+                    <option value="income">Income Only</option>
+                    <option value="expense">Expense Only</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Amount Range:</label>
+                <input type="number" id="minAmountFilter" placeholder="Min PKR" step="0.01">
+                <span>to</span>
+                <input type="number" id="maxAmountFilter" placeholder="Max PKR" step="0.01">
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button onclick="loadLedger()" class="primary-btn">🔍 Apply Filters</button>
+            <button onclick="resetLedgerFilters()" class="secondary-btn">🔄 Reset Filters</button>
+            <button onclick="exportLedger()" class="success-btn">📥 Export to CSV</button>
+        </div>
+        
+        <div class="ledger-summary">
+            <p id="ledgerStats">Showing 0 transactions | Total: PKR 0.00</p>
+        </div>
+        
+        <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+            <table id="ledgerTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Main Category</th>
+                        <th>Sub Category</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ledgerList">
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 20px;">
+                            No transactions found. Add entries from the "Add Entry" page.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- SEARCH PAGE -->
+    <section id="search" class="page">
+        <h2>🔍 Search Transactions</h2>
+        
+        <div class="search-controls">
+            <div class="search-input-group">
+                <input type="text" id="searchInput" placeholder="Search by description...">
+                <div class="search-buttons">
+                    <button onclick="performSearch()" class="primary-btn">🔍 Search</button>
+                    <button onclick="clearSearch()" class="secondary-btn">🗑️ Clear</button>
+                </div>
+            </div>
+            
+            <div class="search-filters">
+                <div class="filter-row">
+                    <div class="filter-item">
+                        <label>Date Range:</label>
+                        <div class="filter-item-row">
+                            <input type="date" id="searchFromDate" placeholder="From">
+                            <span>to</span>
+                            <input type="date" id="searchToDate" placeholder="To">
+                        </div>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label>Amount Range:</label>
+                        <div class="filter-item-row">
+                            <input type="number" id="minAmount" placeholder="Min PKR" step="0.01">
+                            <span>to</span>
+                            <input type="number" id="maxAmount" placeholder="Max PKR" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label>Type:</label>
+                        <select id="searchType">
+                            <option value="all">All Types</option>
+                            <option value="income">Income Only</option>
+                            <option value="expense">Expense Only</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label>Category:</label>
+                        <select id="searchCategory">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="results-summary">
+            <p id="searchResultsCount">🔍 Found 0 transactions</p>
+            <p id="searchTotal">💰 Total: PKR 0.00</p>
+        </div>
+        
+        <div class="search-results">
+            <div id="searchResults">
+                <div class="no-results">📭 No transactions found</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BACKUP PAGE -->
+    <section id="backup" class="page">
+        <h2>💾 Backup & Restore</h2>
+        
+        <div class="backup-section">
+            <h3>📁 Local Backup</h3>
+            <div class="backup-options">
+                <button onclick="exportCSV()" class="primary-btn">📥 Export to CSV</button>
+                <div class="file-input">
+                    <label for="csvFile">📤 Import from CSV:</label>
+                    <input type="file" id="csvFile" accept=".csv" onchange="importCSV(event)">
+                </div>
+            </div>
+        </div>
+        
+        <div class="backup-section">
+            <h3>☁️ Google Drive Sync</h3>
+            <div class="cloud-status">
+                <p id="driveBackupStatus">Status: Not connected</p>
+            </div>
+            <div class="cloud-actions">
+                <button onclick="uploadToDrive()" class="primary-btn">📤 Upload to Google Drive</button>
+                <button onclick="restoreFromDrive()" class="secondary-btn">📥 Restore from Google Drive</button>
+            </div>
+            
+            <div style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 5px;">
+                <p><strong>📋 How to sync with Neon PostgreSQL:</strong></p>
+                <ol style="margin-left: 20px;">
+                    <li>Upload entries to Drive using button above</li>
+                    <li>Run the backend in Replit to process files</li>
+                    <li>Backend will create import files in Drive</li>
+                    <li>Use "Restore from Drive" to download processed data</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="backup-info">
+            <h4>📊 Database Information</h4>
+            <p id="dbInfo">Total Entries: 0 | Google Drive: Not connected</p>
+        </div>
+    </section>
+
+    <!-- 
+        IMPORTANT: Scripts MUST be loaded in this exact order!
+        drive.js must load before app.js
+    -->
+    <script src="db.js"></script>
+    <script src="drive.js"></script>
+    <script src="csv.js"></script>
+    <script src="app.js"></script>
+    
+    <!-- Pre-load Google APIs for better compatibility -->
+    <script>
+        // Pre-load Google APIs
+        const gapiScript = document.createElement('script');
+        gapiScript.src = 'https://apis.google.com/js/api.js';
+        gapiScript.async = true;
+        gapiScript.defer = true;
+        document.head.appendChild(gapiScript);
+        
+        const gisScript = document.createElement('script');
+        gisScript.src = 'https://accounts.google.com/gsi/client';
+        gisScript.async = true;
+        gisScript.defer = true;
+        document.head.appendChild(gisScript);
+        
+        console.log("✅ Google scripts pre-loaded");
+    </script>
+    
+    <!-- Debug and initialization script -->
+    <script>
+        // Check if we're on GitHub Pages
+        (function() {
+            const isGitHubPages = window.location.hostname.includes('github.io');
+            if (isGitHubPages) {
+                document.getElementById('githubWarning').style.display = 'block';
+                console.log("🌐 Running on GitHub Pages");
+            }
+            
+            // Wait for all scripts to load
+            window.addEventListener('load', function() {
+                console.log("✅ All resources loaded");
+                
+                // Check if driveSync loaded properly
+                setTimeout(function() {
+                    console.log("🔍 Checking driveSync status...");
+                    
+                    if (typeof window.driveSync === 'undefined') {
+                        console.error("❌ CRITICAL: driveSync is not defined!");
+                        console.error("Available scripts:", 
+                            Array.from(document.scripts).map(s => s.src).filter(Boolean));
+                        
+                        // Emergency fallback
+                        window.driveSync = {
+                            saveConfig: function(clientId, apiKey, folderId) {
+                                try {
+                                    const config = { clientId, apiKey, folderId };
+                                    localStorage.setItem('gdriveConfig', JSON.stringify(config));
+                                    alert("✅ Credentials saved (emergency mode)");
+                                    return true;
+                                } catch (e) {
+                                    alert("❌ Error: " + e.message);
+                                    return false;
+                                }
+                            },
+                            getConfigStatus: function() {
+                                try {
+                                    const config = JSON.parse(localStorage.getItem('gdriveConfig') || '{}');
+                                    return {
+                                        isConfigured: !!(config.clientId && config.apiKey && config.folderId),
+                                        isConnected: false
+                                    };
+                                } catch (e) {
+                                    return { isConfigured: false, isConnected: false };
+                                }
+                            }
+                        };
+                        
+                        console.log("⚠️ Created emergency driveSync fallback");
+                    } else {
+                        console.log("✅ driveSync loaded successfully");
+                        console.log("📊 Initial status:", window.driveSync.getConfigStatus ? window.driveSync.getConfigStatus() : "No getConfigStatus method");
+                    }
+                    
+                    // Initialize UI after everything is loaded
+                    setTimeout(function() {
+                        if (typeof updateDriveUI === 'function') {
+                            updateDriveUI();
+                        }
+                        if (typeof calcTotal === 'function') {
+                            calcTotal();
+                        }
+                    }, 500);
+                    
+                }, 1000);
+            });
+            
+            // Debug helper
+            window.debugApp = function() {
+                console.log("=== APP DEBUG ===");
+                console.log("driveSync:", window.driveSync);
+                console.log("driveSync.getConfigStatus:", window.driveSync.getConfigStatus ? window.driveSync.getConfigStatus() : "Not available");
+                console.log("localStorage config:", localStorage.getItem('gdriveConfig'));
+                console.log("Functions available:", {
+                    saveDriveConfig: typeof saveDriveConfig,
+                    updateDriveUI: typeof updateDriveUI,
+                    showPage: typeof showPage
+                });
+                console.log("Scripts loaded:", Array.from(document.scripts).map(s => s.src || s.innerHTML.substring(0, 50) + '...'));
+                console.log("=== END DEBUG ===");
+            };
+            
+        })();
+    </script>
+</body>
+</html>
