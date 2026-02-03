@@ -470,6 +470,64 @@
     <!-- Load the REAL JavaScript files -->
     <script src="db.js"></script>
     <script src="app.js"></script>
+    <!-- Debug script to check function availability -->
+<script>
+    // Check if functions are properly exposed
+    function verifyFunctions() {
+        console.log("=== VERIFYING FUNCTIONS ===");
+        
+        const requiredFunctions = [
+            'login', 'register', 'logout', 'checkAuth',
+            'showPage', 'addTemp', 'saveAll', 'addMainHead'
+        ];
+        
+        let allGood = true;
+        
+        requiredFunctions.forEach(funcName => {
+            if (typeof window[funcName] === 'function') {
+                console.log(`✅ ${funcName}() is available`);
+            } else {
+                console.log(`❌ ${funcName}() is NOT available`);
+                allGood = false;
+            }
+        });
+        
+        // Also check dbAPI
+        console.log("=== CHECKING DB API ===");
+        if (window.dbAPI) {
+            console.log("✅ dbAPI is available");
+            console.log("dbAPI methods:", Object.keys(window.dbAPI));
+        } else {
+            console.log("❌ dbAPI is NOT available");
+            allGood = false;
+        }
+        
+        return allGood;
+    }
+    
+    // Check immediately and periodically
+    setTimeout(() => {
+        console.log("=== INITIAL CHECK (after 500ms) ===");
+        verifyFunctions();
+    }, 500);
+    
+    setTimeout(() => {
+        console.log("=== SECOND CHECK (after 2000ms) ===");
+        verifyFunctions();
+    }, 2000);
+    
+    // Add a global error handler
+    window.addEventListener('error', function(event) {
+        console.error("Global error caught:", event.message);
+        console.error("File:", event.filename);
+        console.error("Line:", event.lineno);
+        
+        // Show in debug panel
+        if (window.addDebugLog) {
+            addDebugLog(`ERROR: ${event.message}`, 'error');
+        }
+    });
+</script>
     
     <!-- Simple initialization -->
     <script>
