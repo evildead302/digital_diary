@@ -17,7 +17,7 @@ async function generateUniqueUserId() {
     const timestampBase61 = Base61.generateBase61Timestamp();
     
     // Add random base61 characters
-    const randomPart = Base61.random(3);
+    const randomPart = Base61.random(4);
     
     userId = timestampBase61 + randomPart;
     
