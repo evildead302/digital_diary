@@ -97,7 +97,7 @@ class Base61 {
             return 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
         const timestampBase61 = this.generateBase61Timestamp();
-        const randomPart = this.random(3);
+        const randomPart = this.random(5);
         return timestampBase61 + randomPart + userId;
     }
 }
