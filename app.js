@@ -1001,32 +1001,6 @@ async function testAPI() {
     }
 }
 
-function updateSyncButtons() {
-    if (typeof window.addDebugLog === 'function') {
-        window.addDebugLog('app.js: updateSyncButtons() called', 'info');
-    }
-    const quickActions = document.querySelector(".quick-actions");
-    if (quickActions) {
-        const oldBtn = quickActions.querySelector("#syncBtn");
-        if (oldBtn) oldBtn.remove();
-        
-        if (!quickActions.querySelector("#syncToCloudBtn")) {
-            const syncToBtn = document.createElement("button");
-            syncToBtn.id = "syncToCloudBtn";
-            syncToBtn.className = "primary-btn sync-to-btn";
-            syncToBtn.innerHTML = "⬆️ Sync TO Cloud";
-            syncToBtn.onclick = syncWithCloud;
-            quickActions.appendChild(syncToBtn);
-            
-            const syncFromBtn = document.createElement("button");
-            syncFromBtn.id = "syncFromCloudBtn";
-            syncFromBtn.className = "primary-btn sync-from-btn";
-            syncFromBtn.innerHTML = "⬇️ Sync FROM Cloud";
-            syncFromBtn.onclick = syncFromCloud;
-            quickActions.appendChild(syncFromBtn);
-        }
-    }
-}
 
 // ==================== DATABASE WRAPPER FUNCTIONS ====================
 function getAllEntries(callback) {
