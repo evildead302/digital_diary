@@ -960,7 +960,7 @@ function initApp() {
     // updateSyncButtons(); // REMOVED - Buttons are already in HTML
 }
 
-function testAPI() {
+async function testAPI() {
     if (typeof window.addDebugLog === 'function') {
         window.addDebugLog('app.js: testAPI() called', 'info');
     }
