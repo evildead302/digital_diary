@@ -1058,6 +1058,7 @@ function getUserEntries(callback) {
 }
 
 // ==================== TEMPORARY ENTRIES RENDER ====================
+// ==================== TEMPORARY ENTRIES RENDER ====================
 function renderTemp() {
     try {
         if (typeof window.addDebugLog === 'function') {
@@ -1077,28 +1078,28 @@ function renderTemp() {
         const tableContainer = document.createElement("div");
         tableContainer.className = "table-container";
         tableContainer.style.width = "100%";
-        tableContainer.style.overflowX = "auto";  // Force horizontal scroll
+        tableContainer.style.overflowX = "auto";
         tableContainer.style.overflowY = "auto";
         tableContainer.style.maxHeight = "400px";
         tableContainer.style.border = "1px solid #e0e0e0";
         tableContainer.style.borderRadius = "8px";
         tableContainer.style.backgroundColor = "white";
         
-        // Create table with minimum width to ensure scrolling
+        // Create table with fixed class - will be targeted by #entry .fixed-table CSS
         const table = document.createElement("table");
         table.className = "fixed-table";
-        table.style.minWidth = "900px";  // Force min width to enable horizontal scroll
         table.style.width = "100%";
         table.style.borderCollapse = "collapse";
         
         const thead = document.createElement("thead");
         thead.innerHTML = `
             <tr>
-                <th style="width: 110px; min-width: 110px;">Date</th>
-                <th style="width: 130px; min-width: 130px;">Main Category</th>
-                <th style="width: 130px; min-width: 130px;">Sub Category</th>
+                <th style="width: 100px; min-width: 100px;">Date</th>
+                <th style="width: 120px; min-width: 120px;">Main Category</th>
+                <th style="width: 120px; min-width: 120px;">Sub Category</th>
                 <th style="min-width: 200px;">Description</th>
-                <th style="width: 130px; min-width: 130px;">Amount</th>
+                <th style="width: 120px; min-width: 120px;">Amount</th>
+                <th style="width: 80px; min-width: 80px;">Sync</th>
                 <th style="width: 110px; min-width: 110px;">Actions</th>
             </tr>
         `;
@@ -1109,16 +1110,20 @@ function renderTemp() {
         
         tempEntries.forEach((entry, index) => {
             const row = document.createElement("tr");
+            // Add income-row or expense-row class for red/green borders
             row.className = entry.amount < 0 ? "expense-row" : "income-row";
             
+            const syncIcon = "🔄"; // Temporary entries always pending sync
+            
             row.innerHTML = `
-                <td style="width: 110px; min-width: 110px;">${entry.date}</td>
-                <td style="width: 130px; min-width: 130px;">${entry.main}</td>
-                <td style="width: 130px; min-width: 130px;">${entry.sub}</td>
+                <td style="width: 100px; min-width: 100px;">${entry.date}</td>
+                <td style="width: 120px; min-width: 120px;">${entry.main}</td>
+                <td style="width: 120px; min-width: 120px;">${entry.sub}</td>
                 <td style="min-width: 200px; word-wrap: break-word; white-space: normal;">${entry.desc}</td>
-                <td style="width: 130px; min-width: 130px; text-align: right;" class="${entry.amount < 0 ? 'amount-negative' : 'amount-positive'}">
+                <td style="width: 120px; min-width: 120px; text-align: right;" class="${entry.amount < 0 ? 'amount-negative' : 'amount-positive'}">
                     ${entry.amount < 0 ? "-" : "+"}PKR ${Math.abs(entry.amount).toFixed(2)}
                 </td>
+                <td style="width: 80px; min-width: 80px; text-align: center;">${syncIcon}</td>
                 <td style="width: 110px; min-width: 110px; text-align: center;">
                     <button onclick="editTemp(${index})" class="small-btn edit-btn">✏️</button>
                     <button onclick="deleteTemp(${index})" class="small-btn danger-btn">🗑️</button>
@@ -2063,6 +2068,7 @@ async function saveAll() {
 }
 
 // ==================== SAVED ENTRIES MANAGEMENT ====================
+// ==================== SAVED ENTRIES MANAGEMENT ====================
 function loadSaved() {
     if (typeof window.addDebugLog === 'function') {
         window.addDebugLog('app.js: loadSaved() called', 'info');
@@ -2092,14 +2098,14 @@ function loadSaved() {
             // Create fixed height container that scrolls internally
             const tableContainer = document.createElement("div");
             tableContainer.className = "table-container";
-            tableContainer.style.height = "400px";  // Fixed height
+            tableContainer.style.height = "400px";
             tableContainer.style.maxHeight = "400px";
-            tableContainer.style.overflowY = "auto";  // Vertical scroll inside container
-            tableContainer.style.overflowX = "auto";  // Horizontal scroll inside container
+            tableContainer.style.overflowY = "auto";
+            tableContainer.style.overflowX = "auto";
             tableContainer.style.border = "1px solid #e0e0e0";
             tableContainer.style.borderRadius = "8px";
             tableContainer.style.backgroundColor = "white";
-            tableContainer.style.position = "relative";  // Keep it in flow
+            tableContainer.style.position = "relative";
             
             const table = document.createElement("table");
             table.className = "fixed-table";
@@ -2113,13 +2119,13 @@ function loadSaved() {
             
             thead.innerHTML = `
                 <tr>
-                    <th>Date</th>
-                    <th>Main Category</th>
-                    <th>Sub Category</th>
-                    <th>Description</th>
-                    <th>Amount</th>
-                    <th>Sync</th>
-                    <th>Actions</th>
+                    <th style="width: 100px; min-width: 100px;">Date</th>
+                    <th style="width: 120px; min-width: 120px;">Main Category</th>
+                    <th style="width: 120px; min-width: 120px;">Sub Category</th>
+                    <th style="min-width: 200px;">Description</th>
+                    <th style="width: 120px; min-width: 120px;">Amount</th>
+                    <th style="width: 80px; min-width: 80px;">Sync</th>
+                    <th style="width: 110px; min-width: 110px;">Actions</th>
                 </tr>
             `;
             
@@ -2129,22 +2135,21 @@ function loadSaved() {
             
             recentEntries.forEach((e, i) => {
                 const row = document.createElement("tr");
+                // Add income-row or expense-row class for red/green borders
                 row.className = e.amount < 0 ? "expense-row" : "income-row";
                 
                 const syncIcon = e.synced ? "✅" : "🔄";
                 
                 row.innerHTML = `
-                    <td>${e.date}</td>
-                    <td>${e.main}</td>
-                    <td>${e.sub}</td>
-                    <td style="word-wrap: break-word; white-space: normal;">${e.desc}</td>
-                    <td class="${e.amount < 0 ? 'amount-negative' : 'amount-positive'}">
+                    <td style="width: 100px; min-width: 100px;">${e.date}</td>
+                    <td style="width: 120px; min-width: 120px;">${e.main}</td>
+                    <td style="width: 120px; min-width: 120px;">${e.sub}</td>
+                    <td style="min-width: 200px; word-wrap: break-word; white-space: normal;">${e.desc}</td>
+                    <td style="width: 120px; min-width: 120px; text-align: right;" class="${e.amount < 0 ? 'amount-negative' : 'amount-positive'}">
                         ${e.amount < 0 ? "-" : "+"}PKR ${Math.abs(e.amount).toFixed(2)}
                     </td>
-                    <td style="text-align: center;">
-                        ${syncIcon}
-                    </td>
-                    <td style="text-align: center;">
+                    <td style="width: 80px; min-width: 80px; text-align: center;">${syncIcon}</td>
+                    <td style="width: 110px; min-width: 110px; text-align: center;">
                         <button onclick="editSavedEntryFromOtherPage('${e.id}')" class="small-btn edit-btn">✏️</button>
                         <button onclick="deleteSavedEntry('${e.id}')" class="small-btn danger-btn">🗑️</button>
                     </td>
