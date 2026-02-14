@@ -2089,16 +2089,28 @@ function loadSaved() {
                 return;
             }
         
+            // Create fixed height container that scrolls internally
             const tableContainer = document.createElement("div");
             tableContainer.className = "table-container";
+            tableContainer.style.height = "400px";  // Fixed height
             tableContainer.style.maxHeight = "400px";
-            tableContainer.style.overflowY = "auto";
-            tableContainer.style.overflowX = "auto";
+            tableContainer.style.overflowY = "auto";  // Vertical scroll inside container
+            tableContainer.style.overflowX = "auto";  // Horizontal scroll inside container
+            tableContainer.style.border = "1px solid #e0e0e0";
+            tableContainer.style.borderRadius = "8px";
+            tableContainer.style.backgroundColor = "white";
+            tableContainer.style.position = "relative";  // Keep it in flow
             
             const table = document.createElement("table");
             table.className = "fixed-table";
+            table.style.width = "100%";
+            table.style.borderCollapse = "collapse";
             
             const thead = document.createElement("thead");
+            thead.style.position = "sticky";
+            thead.style.top = "0";
+            thead.style.zIndex = "10";
+            
             thead.innerHTML = `
                 <tr>
                     <th>Date</th>
@@ -2125,7 +2137,7 @@ function loadSaved() {
                     <td>${e.date}</td>
                     <td>${e.main}</td>
                     <td>${e.sub}</td>
-                    <td>${e.desc}</td>
+                    <td style="word-wrap: break-word; white-space: normal;">${e.desc}</td>
                     <td class="${e.amount < 0 ? 'amount-negative' : 'amount-positive'}">
                         ${e.amount < 0 ? "-" : "+"}PKR ${Math.abs(e.amount).toFixed(2)}
                     </td>
@@ -2144,6 +2156,11 @@ function loadSaved() {
             table.appendChild(tbody);
             tableContainer.appendChild(table);
             savedEntryList.appendChild(tableContainer);
+            
+            // Ensure the parent container doesn't force page scroll
+            savedEntryList.style.overflow = "hidden";
+            savedEntryList.style.height = "auto";
+            
         } catch (error) {
             console.error("❌ Error in loadSaved:", error);
             const savedEntryList = document.getElementById("savedEntryList");
