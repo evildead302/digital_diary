@@ -1109,6 +1109,12 @@ function renderTemp() {
         
         tempEntries.forEach((entry, index) => {
             const row = document.createElement("tr");
+// Add the red/green indicator classes based on type
+if (entry.type === 'Dr') {
+    row.classList.add('dr-row');
+} else {
+    row.classList.add('cr-row');
+}
             row.className = entry.amount < 0 ? "expense-row" : "income-row";
             
             row.innerHTML = `
