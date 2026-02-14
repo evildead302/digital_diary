@@ -2091,30 +2091,23 @@ function loadSaved() {
         
             const tableContainer = document.createElement("div");
             tableContainer.className = "table-container";
-            tableContainer.style.width = "100%";
-            tableContainer.style.overflowX = "auto";
-            tableContainer.style.overflowY = "auto";
             tableContainer.style.maxHeight = "400px";
-            tableContainer.style.border = "1px solid #e0e0e0";
-            tableContainer.style.borderRadius = "8px";
-            tableContainer.style.backgroundColor = "white";
+            tableContainer.style.overflowY = "auto";
+            tableContainer.style.overflowX = "auto";
             
             const table = document.createElement("table");
             table.className = "fixed-table";
-            table.style.minWidth = "1000px";
-            table.style.width = "100%";
-            table.style.borderCollapse = "collapse";
             
             const thead = document.createElement("thead");
             thead.innerHTML = `
                 <tr>
-                    <th style="width: 110px; min-width: 110px;">Date</th>
-                    <th style="width: 130px; min-width: 130px;">Main Category</th>
-                    <th style="width: 130px; min-width: 130px;">Sub Category</th>
-                    <th style="min-width: 200px;">Description</th>
-                    <th style="width: 130px; min-width: 130px;">Amount</th>
-                    <th style="width: 100px; min-width: 100px;">Sync Status</th>
-                    <th style="width: 110px; min-width: 110px;">Actions</th>
+                    <th>Date</th>
+                    <th>Main Category</th>
+                    <th>Sub Category</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Sync</th>
+                    <th>Actions</th>
                 </tr>
             `;
             
@@ -2126,22 +2119,20 @@ function loadSaved() {
                 const row = document.createElement("tr");
                 row.className = e.amount < 0 ? "expense-row" : "income-row";
                 
-                const syncStatus = e.synced ? 
-                    (e.syncRemarks === "edited" ? "✏️ Edited" : "✅ Synced") : 
-                    "🔄 Pending";
+                const syncIcon = e.synced ? "✅" : "🔄";
                 
                 row.innerHTML = `
-                    <td style="width: 110px; min-width: 110px;">${e.date}</td>
-                    <td style="width: 130px; min-width: 130px;">${e.main}</td>
-                    <td style="width: 130px; min-width: 130px;">${e.sub}</td>
-                    <td style="min-width: 200px; word-wrap: break-word; white-space: normal;">${e.desc}</td>
-                    <td style="width: 130px; min-width: 130px; text-align: right;" class="${e.amount < 0 ? 'amount-negative' : 'amount-positive'}">
+                    <td>${e.date}</td>
+                    <td>${e.main}</td>
+                    <td>${e.sub}</td>
+                    <td>${e.desc}</td>
+                    <td class="${e.amount < 0 ? 'amount-negative' : 'amount-positive'}">
                         ${e.amount < 0 ? "-" : "+"}PKR ${Math.abs(e.amount).toFixed(2)}
                     </td>
-                    <td style="width: 100px; min-width: 100px; text-align: center;">
-                        ${syncStatus}
+                    <td style="text-align: center;">
+                        ${syncIcon}
                     </td>
-                    <td style="width: 110px; min-width: 110px; text-align: center;">
+                    <td style="text-align: center;">
                         <button onclick="editSavedEntryFromOtherPage('${e.id}')" class="small-btn edit-btn">✏️</button>
                         <button onclick="deleteSavedEntry('${e.id}')" class="small-btn danger-btn">🗑️</button>
                     </td>
