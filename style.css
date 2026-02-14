@@ -1690,3 +1690,29 @@ mark {
     display: block;
     margin-bottom: 5px;
 }
+/* ====================
+   FORCE FIX FOR RED/GREEN BORDERS
+   ==================== */
+#entry .fixed-table tbody tr.income-row {
+    border-left: 4px solid #4caf50 !important;
+}
+
+#entry .fixed-table tbody tr.expense-row {
+    border-left: 4px solid #f44336 !important;
+}
+
+#entry .fixed-table tbody tr.income-row td:first-child,
+#entry .fixed-table tbody tr.expense-row td:first-child {
+    position: relative;
+}
+
+/* Also fix the table width issue */
+#entry .fixed-table {
+    min-width: 1000px !important;
+    width: 100%;
+}
+
+#entry .table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
