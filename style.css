@@ -1500,11 +1500,12 @@ mark {
         font-size: 0.8em;
     }
     
-    #entry .fixed-table th,
+        #entry .fixed-table th,
     #entry .fixed-table td {
-        padding: 8px 6px;
-        font-size: 0.8em;
+        padding: 6px 4px;   /* Smaller padding to save width */
+        font-size: 0.75em;  /* Smaller font to fit the 6th column */
     }
+
     
     #entry .small-btn {
         padding: 5px 8px !important;
