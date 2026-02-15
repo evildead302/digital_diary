@@ -1109,6 +1109,8 @@ function renderTemp() {
         
         tempEntries.forEach((entry, index) => {
             const row = document.createElement("tr");
+            if (entry.type === 'Dr') row.classList.add('dr-row');
+if (entry.type === 'Cr') row.classList.add('cr-row');
             row.className = entry.amount < 0 ? "expense-row" : "income-row";
             
             row.innerHTML = `
