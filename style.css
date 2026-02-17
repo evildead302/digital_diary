@@ -1631,11 +1631,17 @@ mark {
     
     /* Entry page specific */
     #tempList .table-container,
-    #savedEntryList .table-container,
-    #recentEntries .table-container {
-        height: 200px;
-        max-height: 200px;
-    }
+#savedEntryList .table-container,
+#recentEntries .table-container {
+    max-height: 350px;       /* Increased height so it's not too cramped */
+    overflow-x: auto !important; /* FORCES horizontal scroll */
+    overflow-y: auto;        /* Allows vertical scroll if many entries */
+    display: block;
+    width: 100%;
+    border: 1px solid #ddd;
+    -webkit-overflow-scrolling: touch; /* Smooth scroll for mobile */
+}
+
     
     #tempList .fixed-table,
     #savedEntryList .fixed-table,
