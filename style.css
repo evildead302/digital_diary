@@ -277,7 +277,7 @@ nav button.danger-btn:hover {
 #ledgerTable th:nth-child(4),
 #ledgerTable td:nth-child(4) {
     width: auto;
-    min-width: 350px;
+    min-width: 500px;
     white-space: normal;
     word-wrap: break-word;
 }
