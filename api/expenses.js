@@ -65,7 +65,6 @@ export default async function handler(req, res) {
         FROM expenses 
         WHERE user_id = ${userId}
         ORDER BY date DESC
-        LIMIT 1000
       `;
       console.log(`Found ${expenses.length} expenses for user ${userId}`);
       return res.json({ 
