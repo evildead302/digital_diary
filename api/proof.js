@@ -33,24 +33,47 @@ export default async function handler(req, res) {
   if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
   const userId = user.userId;
 
+  // Log what env vars the function can actually see (names only, no secrets)
+  console.log('proof.js env check:', {
+    hasJwt: !!JWT_SECRET,
+    hasAccountId: !!process.env.R2_ACCOUNT_ID,
+    hasKeyId: !!process.env.R2_ACCESS_KEY_ID,
+    hasSecret: !!process.env.R2_SECRET_ACCESS_KEY,
+    hasBucket: !!process.env.R2_BUCKET,
+    bucketValue: process.env.R2_BUCKET || null,
+    method: req.method
+  });
+
   try {
     if (req.method === 'POST') {
       const { key, contentType, data } = req.body || {};
+      console.log('POST /api/proof', {
+        key,
+        contentType,
+        dataLength: typeof data === 'string' ? data.length : 0,
+        userId
+      });
+
       if (!isValidKeyForUser(key, userId)) {
-        return res.status(400).json({ success: false, message: 'Invalid file key' });
+        console.log('Invalid key:', { key, userId });
+        return res.status(400).json({ success: false, message: 'Invalid file key', key, userId });
       }
       const ext = ALLOWED_TYPES[contentType];
       if (!ext || !key.endsWith(`.${ext}`)) {
-        return res.status(400).json({ success: false, message: 'File type not allowed (use JPG, PNG, WEBP or PDF)' });
+        return res.status(400).json({ success: false, message: 'File type not allowed (use JPG, PNG, WEBP or PDF)', contentType, key });
       }
       if (typeof data !== 'string' || data.length === 0) {
         return res.status(400).json({ success: false, message: 'No file data' });
       }
       const buffer = Buffer.from(data, 'base64');
       if (buffer.length === 0 || buffer.length > MAX_BYTES) {
-        return res.status(400).json({ success: false, message: 'File is empty or larger than 3 MB' });
+        return res.status(400).json({ success: false, message: 'File is empty or larger than 3 MB', size: buffer.length });
       }
+
+      console.log('Calling putProof:', { key, size: buffer.length, contentType });
       await putProof(key, buffer, contentType);
+      console.log('putProof succeeded:', key);
+
       return res.json({ success: true, key, size: buffer.length });
     }
 
@@ -59,7 +82,7 @@ export default async function handler(req, res) {
       if (!isValidKeyForUser(key, userId)) {
         return res.status(400).json({ success: false, message: 'Invalid file key' });
       }
-      const url = await signedGetUrl(key, 600);     // link works for 10 minutes
+      const url = await signedGetUrl(key, 600);
       return res.json({ success: true, url });
     }
 
@@ -74,7 +97,26 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   } catch (error) {
-    console.error('Proof API error:', error);
-    return res.status(500).json({ success: false, message: 'Proof storage error', error: error.message });
+    // Print EVERYTHING so Vercel logs show the real cause
+    console.error('Proof API error FULL:', {
+      name: error.name,
+      message: error.message,
+      code: error.Code || error.code,
+      statusCode: error.$metadata?.httpStatusCode,
+      requestId: error.$metadata?.requestId,
+      attempts: error.$metadata?.attempts,
+      stack: error.stack,
+      cause: error.cause ? String(error.cause) : null
+    });
+
+    return res.status(500).json({
+      success: false,
+      message: 'Proof storage error',
+      error: error.message,
+      errorName: error.name,
+      errorCode: error.Code || error.code || null,
+      httpStatus: error.$metadata?.httpStatusCode || null,
+      requestId: error.$metadata?.requestId || null
+    });
   }
 }
