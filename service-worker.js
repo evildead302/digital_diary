@@ -10,6 +10,7 @@ const STATIC_FILES = [
     './app.js',
     './db.js',
     './features.js'
+    './proofs.js'
     './manifest.json'
 ];
 
