@@ -1,21 +1,17 @@
-// /api/backup.js - daily SQL backup of the database into Cloudflare R2 (one separate file per day)
-//   file:  backups/daily/YYYY-MM-DD.sql.gz   (gzip of plain INSERT statements)
-// Called automatically by a Vercel Cron Job (see vercel.json). Vercel sends  Authorization: Bearer <CRON_SECRET>
-// You can also run it by hand:  curl -H "Authorization: Bearer YOUR_CRON_SECRET" https://YOUR-SITE/api/backup
+// /api/backup.js - TEMPORARY TEST VERSION (NO AUTH)
+//   ⚠️ Anyone can call this. Restore the protected version immediately after testing.
 import { neon } from '@neondatabase/serverless';
 import zlib from 'zlib';
 import { putObject, listKeys, deleteObject } from './_r2.js';
 
 const sql = neon(process.env.DATABASE_URL);
-// works with both old (sql(text)) and new (sql.query(text)) versions of the Neon driver
 const run = (text) => (typeof sql.query === 'function' ? sql.query(text) : sql(text));
 
 const TABLES = (process.env.BACKUP_TABLES || 'expenses,budgets').split(',').map(s => s.trim()).filter(Boolean);
-const KEEP_DAYS = parseInt(process.env.BACKUP_KEEP_DAYS || '30', 10);   // 0 = keep every backup forever
+const KEEP_DAYS = parseInt(process.env.BACKUP_KEEP_DAYS || '30', 10);
 const TZ = process.env.BACKUP_TZ || 'Asia/Karachi';
 const ROWS_PER_INSERT = 500;
 
-// turn a JavaScript value into an SQL literal
 function lit(v) {
   if (v === null || v === undefined) return 'NULL';
   if (typeof v === 'number' || typeof v === 'bigint') return String(v);
@@ -26,21 +22,14 @@ function lit(v) {
 }
 
 export default async function handler(req, res) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return res.status(500).json({ success: false, message: 'CRON_SECRET is not set in the environment variables' });
-  }
-  if (req.headers.authorization !== `Bearer ${secret}`) {
-    return res.status(401).json({ success: false, message: 'Unauthorized' });
-  }
+  // ⚠️ AUTH CHECK REMOVED FOR TESTING
 
   const started = Date.now();
   try {
-    const day = new Date().toLocaleDateString('en-CA', { timeZone: TZ });   // YYYY-MM-DD in Pakistan time
+    const day = new Date().toLocaleDateString('en-CA', { timeZone: TZ });
     const lines = [
       '-- Accounts Diary database backup',
       `-- backup date: ${day} (${TZ})   created: ${new Date().toISOString()}`,
-      '-- restore: run this file in the Neon SQL editor / psql on tables that already exist',
       ''
     ];
     const counts = {};
@@ -76,7 +65,6 @@ export default async function handler(req, res) {
     const key = `backups/daily/${day}.sql.gz`;
     await putObject(key, gz, 'application/gzip');
 
-    // keep only the newest KEEP_DAYS days
     const deleted = [];
     if (KEEP_DAYS > 0) {
       const cutoff = new Date(Date.now() - KEEP_DAYS * 86400000).toLocaleDateString('en-CA', { timeZone: TZ });
@@ -87,7 +75,14 @@ export default async function handler(req, res) {
     }
 
     console.log('Backup done:', { key, bytes: gz.length, counts, deleted: deleted.length, ms: Date.now() - started });
-    return res.json({ success: true, key, bytes: gz.length, tables: counts, deletedOldBackups: deleted, ms: Date.now() - started });
+    return res.json({
+      success: true,
+      key,
+      bytes: gz.length,
+      tables: counts,
+      deletedOldBackups: deleted,
+      ms: Date.now() - started
+    });
   } catch (error) {
     console.error('Backup failed:', error);
     return res.status(500).json({ success: false, message: 'Backup failed', error: error.message });
