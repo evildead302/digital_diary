@@ -1,6 +1,6 @@
-// service-worker.js - UPDATED
+// service-worker.js - FIXED (missing commas in STATIC_FILES)
 
-const CACHE_NAME = 'accounts-diary-v3-1-1';
+const CACHE_NAME = 'accounts-diary-v3-1-2';   // change this every time you upload new files
 
 // Files to cache
 const STATIC_FILES = [
@@ -9,8 +9,8 @@ const STATIC_FILES = [
     './style.css',
     './app.js',
     './db.js',
-    './features.js'
-    './proofs.js'
+    './features.js',
+    './proofs.js',
     './manifest.json'
 ];
 
@@ -48,5 +48,6 @@ self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
             .then(response => response || fetch(event.request))
-    );
+    )
+        ;
 });
