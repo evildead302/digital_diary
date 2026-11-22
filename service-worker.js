@@ -1,6 +1,6 @@
 // service-worker.js - UPDATED
 
-const CACHE_NAME = 'accounts-diary-v3';
+const CACHE_NAME = 'accounts-diary-v3-1-1';
 
 // Files to cache
 const STATIC_FILES = [
